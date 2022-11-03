@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "HelChat",
-    "slug": "HelChat",
+    "name": "chatly",
+    "slug": "chatly",
     "version": "1.0.0",
+    "owner": "chatly",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,9 +15,7 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
