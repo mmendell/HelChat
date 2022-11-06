@@ -15,7 +15,10 @@ const Stack = createStackNavigator();
 export default class HelloWorld extends Component {
   constructor(props) {
     super(props);
-    this.state = { text: "" };
+    this.state = {
+      messages: [],
+      text: "",
+    };
   }
 
   alertMyText(input = []) {
