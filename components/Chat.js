@@ -40,6 +40,16 @@ export default class Chat extends React.Component {
   componentDidMount() {
     let { name, color } = this.props.route.params;
     this.props.navigation.setOptions({ title: name });
+    this.setState({
+      messages: [
+        {
+          _id: 2,
+          text: `${name} has entered the chat`,
+          createdAt: new Date(),
+          system: true,
+        },
+      ],
+    });
 
     //Anonymous user authentication
     this.referenceChatMessages = firebase.firestore().collection("messages");
@@ -68,11 +78,11 @@ export default class Chat extends React.Component {
 
   // function updaating the data upon collection update
 
-  onCollectionUpDate = (QuerySnapshot) => {
+  onCollectionUpdate = (querySnapshot) => {
     const messages = [];
-    // go through all documents
-    QuerySnapshot.forEach((doc) => {
-      // get the snapshots dta
+    // go through each document
+    querySnapshot.forEach((doc) => {
+      // get the QueryDocumentSnapshot's data
       let data = doc.data();
       messages.push({
         _id: data._id,
@@ -81,7 +91,7 @@ export default class Chat extends React.Component {
         user: {
           _id: data.user._id,
           name: data.user.name,
-          avatar: data.user.avatar || "",
+          avatar: data.user.avatar || '',
         },
       });
     });
@@ -125,7 +135,7 @@ export default class Chat extends React.Component {
           messages={this.state.messages}
           onSend={(messages) => this.onSend(messages)}
           user={{
-            _id: this.state.user._id,
+            _id: this.state.uid,
             name: name,
           }}
         />
