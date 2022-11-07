@@ -16,13 +16,13 @@ export default class Chat extends React.Component {
       messages: [],
       uid: 0,
       user: {
-        _id: '',
-        avatar: '',
-        name: '',
+        _id: "",
+        avatar: "",
+        name: "",
       },
     };
 
-    if(!firebase.apps.length) {
+    if (!firebase.apps.length) {
       firebase.initializeApp({
         apiKey: "AIzaSyBVAEagIt7wm_EMo1cLTcAqP7cXbt_Ysm4",
         authDomain: "chatapp-b1174.firebaseapp.com",
@@ -33,51 +33,39 @@ export default class Chat extends React.Component {
         measurementId: "G-KFNS1DE272",
       });
     }
-    this.referenceMessages = firebase.firestore().collection('messages');
+    this.referenceMessages = firebase.firestore().collection("messages");
   }
 
   // updating the message state to have default system messages
   componentDidMount() {
-  //  setting message stae 
-  this.setState({
-    messages: [
-      {
-        _id: 2,
-        text: `${name} has entered chat `,
-        createdAt: new Date(),
-        system: true,
-      },
-    ],
-  });
+    //Display username in navigation
+    let { name } = this.props.route.params;
+    this.props.navigation.setOptions({ title: name });
 
-  this.props.navigation.setOptions({ title: name });
+    //Anonymous user authentication
+    this.referenceMessages = firebase.firestore().collection("messages");
 
-  this.referenceMessages = firebase.firestore().collection('messages');
-  
-
-  this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      firebase.auth().signInAnonymously();
-    }
-    this.setState({
-      uid: user.uid,
-      messages: [],
-      user: {
-        _id: user.uid,
-        name: name,
-      },
+    this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        firebase.auth().signInAnonymously();
+      }
+      this.setState({
+        uid: user.uid,
+        messages: [],
+        user: {
+          _id: user.uid,
+          name: name,
+        },
+      });
+      this.unsubscribe = this.referenceMessages
+        .orderBy("createdAt", "desc")
+        .onSnapshot(this.onCollectionUpdate);
     });
-    this.unsubscribe = this.referenceMessages
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(this.onCollectionUpdate);
-  });
-}
-
-componentWillUnmount() {
-  this.unsubscribe();
-  this.authUnsubscribe();
-}
-
+  }
+  componentWillUnmount() {
+    this.unsubscribe();
+    this.authUnsubscribe();
+  }
 
   // function updaating the data upon collection update
 
@@ -94,7 +82,7 @@ componentWillUnmount() {
         user: {
           _id: data.user._id,
           name: data.user.name,
-          avatar: data.user.avatar || '',
+          avatar: data.user.avatar || "",
         },
       });
     });
@@ -107,10 +95,10 @@ componentWillUnmount() {
 
   addMessage = () => {
     const message = this.state.messages[0];
-    this.referenceChatMessages.add({
+    this.referenceMessages.add({
       uid: this.state.uid,
       _id: message._id,
-      text: message.text || '',
+      text: message.text || "",
       createdAt: message.createdAt,
       user: message.user,
     });
@@ -130,10 +118,7 @@ componentWillUnmount() {
 
   // forming ht eactual view
   render() {
-    // have the name sentered by user display ion top
-    let name = this.props.route.params.name;
-    this.props.navigation.setOptions({ title: name });
-    let color = this.props.route.params.color;
+
 
     return (
       <View style={{ flex: 1 }}>
