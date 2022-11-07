@@ -1,4 +1,3 @@
-import { query, QuerySnapshot } from "firebase/firestore";
 import React from "react";
 //imporrt requyired react native components
 import { Platform, KeyboardAvoidingView, View } from "react-native";
@@ -21,29 +20,29 @@ export default class Chat extends React.Component {
         name: "",
       },
     };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVAEagIt7wm_EMo1cLTcAqP7cXbt_Ysm4",
+      authDomain: "chatapp-b1174.firebaseapp.com",
+      projectId: "chatapp-b1174",
+      storageBucket: "chatapp-b1174.appspot.com",
+      messagingSenderId: "659309150012",
+      appId: "1:659309150012:web:4cab34958266356feb2839",
+      measurementId: "G-KFNS1DE272",
+    };
 
     if (!firebase.apps.length) {
-      firebase.initializeApp({
-        apiKey: "AIzaSyBVAEagIt7wm_EMo1cLTcAqP7cXbt_Ysm4",
-        authDomain: "chatapp-b1174.firebaseapp.com",
-        projectId: "chatapp-b1174",
-        storageBucket: "chatapp-b1174.appspot.com",
-        messagingSenderId: "659309150012",
-        appId: "1:659309150012:web:4cab34958266356feb2839",
-        measurementId: "G-KFNS1DE272",
-      });
+      firebase.initializeApp(firebaseConfig);
     }
     this.referenceMessages = firebase.firestore().collection("messages");
   }
 
   // updating the message state to have default system messages
   componentDidMount() {
-    //Display username in navigation
-    let { name } = this.props.route.params;
+    let { name, color } = this.props.route.params;
     this.props.navigation.setOptions({ title: name });
 
     //Anonymous user authentication
-    this.referenceMessages = firebase.firestore().collection("messages");
+    this.referenceChatMessages = firebase.firestore().collection("messages");
 
     this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
       if (!user) {
@@ -57,7 +56,7 @@ export default class Chat extends React.Component {
           name: name,
         },
       });
-      this.unsubscribe = this.referenceMessages
+      this.unsubscribe = this.referenceChatMessages
         .orderBy("createdAt", "desc")
         .onSnapshot(this.onCollectionUpdate);
     });
@@ -69,12 +68,12 @@ export default class Chat extends React.Component {
 
   // function updaating the data upon collection update
 
-  onCollectionUpDate = (querySnapshot) => {
+  onCollectionUpDate = (QuerySnapshot) => {
     const messages = [];
     // go through all documents
-    querySnapshot.forEach((doc) => {
+    QuerySnapshot.forEach((doc) => {
       // get the snapshots dta
-      var data = doc.data();
+      let data = doc.data();
       messages.push({
         _id: data._id,
         text: data.text,
@@ -95,7 +94,7 @@ export default class Chat extends React.Component {
 
   addMessage = () => {
     const message = this.state.messages[0];
-    this.referenceMessages.add({
+    this.referenceChatMessages.add({
       uid: this.state.uid,
       _id: message._id,
       text: message.text || "",
@@ -111,14 +110,14 @@ export default class Chat extends React.Component {
         messages: GiftedChat.append(previousState.messages, messages),
       }),
       () => {
-        this.addMessage();
+        this.addMessage(this.state.messages[0]);
       }
     );
   }
 
   // forming ht eactual view
   render() {
-
+    const { color, name } = this.props.route.params;
 
     return (
       <View style={{ flex: 1 }}>
@@ -126,7 +125,8 @@ export default class Chat extends React.Component {
           messages={this.state.messages}
           onSend={(messages) => this.onSend(messages)}
           user={{
-            _id: 1,
+            _id: this.state.user._id,
+            name: name,
           }}
         />
 
