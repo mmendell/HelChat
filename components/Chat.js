@@ -4,7 +4,9 @@ import { Platform, KeyboardAvoidingView, View } from "react-native";
 import { GiftedChat, InputToolbar } from "react-native-gifted-chat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-
+import CustomActions from './CustomActions';
+import MapView from "react-native-maps";
+import {ActionSheetProvider} from '@expo/react-native-action-sheet';
 const firebase = require("firebase");
 require("firebase/firestore");
 
@@ -149,6 +151,29 @@ export default class Chat extends React.Component {
     });
   };
 
+  // add custom action button
+
+  renderCustomActions = (props) => <CustomActions {...props} />;
+
+    //custom map view
+    renderCustomView(props) {
+      const { currentMessage } = props;
+      if (currentMessage.location) {
+        return (
+          <MapView
+            style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+        );
+      }
+      return null;
+    }
+
   // adding message to the database
 
   addMessage = () => {
@@ -159,6 +184,8 @@ export default class Chat extends React.Component {
       text: message.text || "",
       createdAt: message.createdAt,
       user: message.user,
+      image: message.image || null,
+      location: message.location || null,
     });
   };
 
@@ -179,11 +206,14 @@ export default class Chat extends React.Component {
     const { color, name } = this.props.route.params;
 
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: color }}>
         <GiftedChat
           messages={this.state.messages}
+          isConnected={this.state.isConnected}
+          renderActions={this.renderCustomActions}
           onSend={(messages) => this.onSend(messages)}
           renderInputToolbar={this.renderInputToolbar.bind(this)}
+          renderCustomView={this.renderCustomView}
           user={{
             _id: this.state.uid,
             name: name,
