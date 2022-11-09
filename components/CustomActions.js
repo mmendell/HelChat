@@ -9,91 +9,105 @@ import { connectActionSheet } from '@expo/react-native-action-sheet';
 
 import { getStorage, ref, uploadBytes, getDownloadUrl } from "firebase/storage";
 
+import firebase from 'firebase';
+import 'firebase/firestore';
 class CustomAction extends React.Component {
   state = {
     image: null,
     location: null,
   };
-  uploadImageFetch = async (uri) => {
+  uploadImage = async (uri) => {
+    // create XMLHttpRequest and set its responseType to 'blob'.
     const blob = await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.onload = function () {
         resolve(xhr.response);
       };
       xhr.onerror = function (e) {
-        console.log(error);
-        reject(new TypeError("Network request failed"));
+        console.log(e);
+        reject(new TypeError('Network request failed'));
       };
-      xhr.responseType = "blob";
-      xhr.open("GET", uri, true);
+      xhr.responseType = 'blob';
+      //open the connection and get the URI’s data (the image)
+      xhr.open('GET', uri, true);
       xhr.send(null);
     });
 
-    // storage reference for images
-    const imageNameBefore = uri.split("/");
+    const imageNameBefore = uri.split('/');
     const imageName = imageNameBefore[imageNameBefore.length - 1];
-    const storage = getStorage();
-    const storageRef = ref(storage, `images/${imageName}`);
-    await uploadBytes(storageRef, blob).then((snapshot) => {
-      console.log("uploaded has been successful!");
-    });
-    const downloadUrl = await getDownloadUrl(storageRef);
-    return downloadUrl;
+    //reference to the image in which you put the blob data:
+    const ref = firebase.storage().ref().child(`images/${imageName}`);
+    //store the content retrieved from the Ajax request:
+    const snapshot = await ref.put(blob);
+    // close connection:
+    blob.close();
+    //get image URL from storage:
+    return await snapshot.ref.getDownloadURL();
   };
+
 
   // func for image selection from camera roll
 
   pickImage = async () => {
-    const status = await Permissions.askAsync(Permissions.MEDIA_LIBRARY);
-
-    if (status === "granted") {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images",
-      }).catch((error) => console.log(error));
-
-      if (!result.cancelled) {
-        const imageUrl = await this.uploadImageFetch(result.uri);
-        this.props.onSend({ image: imageUrl });
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      if (status === 'granted') {
+        // pick image
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images, // only images are allowed
+        }).catch((error) => console.log(error));
+        // canceled process
+        if (!result.cancelled) {
+          const imageUrl = await this.uploadImage(result.uri);
+          this.props.onSend({ image: imageUrl });
+        }
       }
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
   // func to take images
   takeImage = async () => {
-    const { status } = await Permissions.askAsync(
-      Permissions.MEDIA_LIBRARY,
-      Permissions.CAMERA
-    );
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    try {
+      if (status === 'granted') {
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        }).catch((error) => console.log(error));
 
-    if ((status = "granted")) {
-      let result = await ImagePicker.launchCameraAsync({
-        mediaTypes: "all",
-      }).catch((error) => console.log(error));
-
-      if (!result.cancelled) {
-        const imageUrl = await this.uploadImageFetch(result.uri);
-        this.props.onSend({ image: imageUrl });
+        if (!result.cancelled) {
+          const imageUrl = await this.uploadImage(result.uri);
+          this.props.onSend({ image: imageUrl });
+        }
       }
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
   // func for getting user location
 
   getLocation = async () => {
-    const { status } = await Permissions.askAsync(
-      Permissions.LOCATION_FOREGROUND
-    );
+    const { status } = await Location.requestForegroundPermissionsAsync();
 
-    if (status === "granted") {
-      let result = await Location.getCurrentPositionAsync({});
-      if (result) {
-        this.props.onSend({
-          location: {
-            latitude: result.coords.latitude,
-            longitude: result.coords.longitude,
-          },
-        });
+    try {
+      if (status === 'granted') {
+        const result = await Location.getCurrentPositionAsync({}).catch(
+          (error) => console.log(error)
+        );
+
+        if (result) {
+          this.props.onSend({
+            location: {
+              longitude: result.coords.longitude,
+              latitude: result.coords.latitude,
+            },
+          });
+        }
       }
+    } catch (error) {
+      console.log(error.message);
     }
   };
 

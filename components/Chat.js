@@ -22,6 +22,7 @@ export default class Chat extends React.Component {
         _id: "",
         avatar: "",
         name: "",
+        location: null,
       },
       isConnected: false,
     };
@@ -91,6 +92,7 @@ export default class Chat extends React.Component {
       if (connection.isConnected) {
         this.setState({ isConnected: true });
         console.log("online");
+        this.setState({ isConnected: true });
         //Anonymous user authentication
         this.referenceChatMessages = firebase
           .firestore()
@@ -112,6 +114,7 @@ export default class Chat extends React.Component {
             .orderBy("createdAt", "desc")
             .onSnapshot(this.onCollectionUpdate);
         });
+        this.getMessages();
       } else {
         this.setState({
           isConnected: false,
@@ -123,8 +126,11 @@ export default class Chat extends React.Component {
   }
 
   componentWillUnmount() {
-    this.unsubscribe();
-    this.authUnsubscribe();
+    if(this.isConnected){
+      this.unsubscribe();
+      this.authUnsubscribe();
+    }
+  
   }
 
   // function updaating the data upon collection update
@@ -137,13 +143,11 @@ export default class Chat extends React.Component {
       let data = doc.data();
       messages.push({
         _id: data._id,
-        text: data.text,
         createdAt: data.createdAt.toDate(),
-        user: {
-          _id: data.user._id,
-          name: data.user.name,
-          avatar: data.user.avatar || "",
-        },
+        text: data.text,
+        user: data.user,
+        image: data.image || null,
+        location: data.location || null,
       });
     });
     this.setState({
@@ -196,6 +200,7 @@ export default class Chat extends React.Component {
         messages: GiftedChat.append(previousState.messages, messages),
       }),
       () => {
+        this.addMessage();
         this.saveMessages();
       }
     );
